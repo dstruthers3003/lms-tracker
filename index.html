@@ -1245,7 +1245,7 @@ function buildEntrants(msgs, opts){
     if (mem0.length && plausibleName(mem0[0].name)){
       nm.name = mem0[0].name;
       nm.confidence = mem0.length > 1 ? 'medium' : nm.confidence;
-      nm.reason = mem0.length > 1 ? 'entering ' + mem0.length + ' people: ' + mem0.map(x=>x.name).join(', ') : nm.reason;
+      nm.reason = mem0.length > 1 ? '' : nm.reason;
     }
     // someone typing "@Greg Chamberlain" shouldn't turn Greg into an entrant
     if (opts.organiser && isOrganiser(nm.name, opts.organiser)){
@@ -1270,11 +1270,16 @@ function buildEntrants(msgs, opts){
     }
     const flags = [];
     if (nm.reason) flags.push(nm.reason);
-    if (lc.evidence.length) flags.push(lc.evidence.join(', '));
-    if (lc.paidCount && lc.names && lc.names.length > lc.paidCount)
-      flags.push('names ' + lc.names.length + ' people but paid for ' + lc.paidCount);
+    if (mem0.length > 1){
+      // the names settled it, so the line-counting working-out is no longer true
+      flags.push('entering ' + mem0.length + ' people: ' + mem0.map(x=>x.name).join(', '));
+    } else {
+      if (lc.evidence.length) flags.push(lc.evidence.join(', '));
+      if (lc.paidCount && lc.names && lc.names.length > lc.paidCount)
+        flags.push('names ' + lc.names.length + ' people but paid for ' + lc.paidCount);
+    }
     if (!paid) flags.push('no payment mentioned');
-    if (LATER_RE.test(text) ) flags.push('said picks would follow');
+    if (LATER_RE.test(text)) flags.push('said picks would follow');
 
     // Who does each team belong to? People write the owner's name next to it
     // ("Everton for Graeme Bell"), so bind by name first and only fall back to
@@ -1305,7 +1310,11 @@ function buildEntrants(msgs, opts){
       const spare = allTeams.filter(t => !Object.values(picks).includes(t));
       for (let i = 1; i <= lc.lines && spare.length; i++) if (!picks[i]) picks[i] = spare.shift();
     }
-    if (Object.keys(picks).length && Object.keys(picks).length < lc.lines) flags.push('only ' + Object.keys(picks).length + ' of ' + lc.lines + ' picks given');
+    const given = Object.keys(picks).length;
+    if (given && given < lc.lines)
+      flags.push(members.length
+        ? 'no team yet for ' + (members.filter(m=>!m.team).map(m=>m.name).join(', ') || (lc.lines - given) + ' of their lines')
+        : 'only ' + given + ' of ' + lc.lines + ' picks given');
     const amt = /£\s?(\d+(?:\.\d+)?)/.exec(text);
 
     let confidence = nm.confidence;
@@ -3278,9 +3287,13 @@ ACT.buildAll = function(){
       });
     }
     const unpaid = !fromBank && !x.paid;
-    if (x.confidence !== 'high' || near.length || unpaid){
+    const realFlags = x.flags.filter(f => !(fromBank && /no payment mentioned|said picks would follow/.test(f)));
+    if ((x.confidence !== 'high' && realFlags.length) || near.length || unpaid){
       review.push({ id:uid(), kind:'entrant', personId:p.id, entryIds:ids, sender:x.sender,
+        // drop anything the finished record disproves — being paid for by someone
+        // else makes "no payment mentioned" untrue, whatever their own message said
         flags: x.flags
+          .filter(f => !(fromBank && /no payment mentioned|said picks would follow/.test(f)))
           .concat(near.length ? ['new name, close to ' + near.map(z=>z.name).join(' / ')] : [])
           .concat(!fromBank ? [x.paid ? 'said paid in the group, nothing in the statement' : 'no payment found for them'] : []),
         quote:x.quote, confidence: (near.length || unpaid) ? 'low' : x.confidence,
@@ -3334,7 +3347,8 @@ function payerName(title, ref){
 
 function flagsPush(review, p, had, want, x){
   review.push({ id:uid(), kind:'entrant', personId:p.id, entryIds:[], sender:x.sender,
-    flags:['paid for ' + had + ' lines but the chat only accounts for ' + want],
+    flags:['The statement shows ' + had + ' lines paid for by ' + p.name + ', but their messages only name ' +
+           want + '. The spare line' + (had - want === 1 ? ' is' : 's are') + ' sitting under their name with no team.'],
     quote:x.quote, confidence:'low', done:false });
 }
 
@@ -3366,7 +3380,7 @@ function renderReview(r){
       </div></div>`;
     return;
   }
-  ui.reviewIdx = Math.min(ui.reviewIdx || 0, q.length - 1);
+  ui.reviewIdx = Math.max(0, Math.min(ui.reviewIdx || 0, q.length - 1));
   const item = q[ui.reviewIdx];
   $('#p-review').innerHTML = `
   <div class="prog">
@@ -3380,7 +3394,7 @@ function renderReview(r){
 function reviewCard(r, it){
   const skip = `<button class="btn ghost" data-act="reviewSkip" data-id="${it.id}">Skip for now</button>`;
   if (it.kind === 'entrant'){
-    const p = person(it.personId) || {name:'?'};
+    const p = person(it.personId) || {id:it.personId, name:'?'};
     const entries = it.entryIds.map(id => r.entries.find(e=>e.id===id)).filter(Boolean);
     return `<div class="qcard">
       <span class="pill ${it.confidence==='low'?'out':'review'}">${it.confidence==='low'?"I'm guessing here":'worth a glance'}</span>
@@ -3388,20 +3402,32 @@ function reviewCard(r, it){
       <p class="hint" style="margin:0">${esc(it.flags.join(' · ')) || 'Just double-checking.'}</p>
       <div class="said">${esc(it.quote)}</div>
       <p class="mini">Sent by <strong>${esc(it.sender||'unknown')}</strong></p>
+      ${(function(){
+        const owners = new Set(entries.map(e => e.personId));
+        return owners.size > 1
+          ? `<p class="hint" style="margin:10px 0 0"><strong>${esc(p.name)}</strong> is paying for
+             ${entries.length} lines across ${owners.size} people. Each line below is under its own name.</p>` : '';
+      })()}
       <div class="qgrid">
-        <div><label class="f" for="rvName">Their name</label>
+        <div><label class="f" for="rvName">${(new Set(entries.map(e=>e.personId))).size > 1 ? 'Who paid' : 'Their name'}</label>
           <input type="text" id="rvName" value="${esc(p.name)}" data-act="rvName" data-id="${it.id}"></div>
         <div><label class="f" for="rvLines">Lines</label>
           <input type="number" id="rvLines" value="${entries.length}" min="1" max="20" data-act="rvLines" data-id="${it.id}"></div>
         <div><label class="f">Paid</label>
           <label class="chk"><input type="checkbox" ${entries[0]&&entries[0].paid?'checked':''} data-act="rvPaid" data-id="${it.id}"> yes</label></div>
       </div>
-      ${entries.map((e,i)=>`<div class="row" style="margin-bottom:8px">
-        <span class="mini" style="width:60px">Line ${i+1}</span>
-        <select data-act="rvPick" data-eid="${e.id}" style="max-width:260px">
+      ${entries.map((e,i)=>{
+        const owner = person(e.personId) || { id:e.personId, name:'?' };
+        const theirs = owner.id === p.id;
+        return `<div class="row" style="margin-bottom:10px;align-items:center">
+        <input type="text" value="${esc(owner.name)}" data-act="rvLineName" data-eid="${e.id}"
+          style="max-width:180px" title="who this line belongs to">
+        <select data-act="rvPick" data-eid="${e.id}" style="max-width:240px">
           <option value="">— no team yet —</option>
           ${seasonClubs().map(c=>`<option value="${esc(c)}" ${(r.picks[e.id]||{})[1]===c?'selected':''}>${esc(c)}</option>`).join('')}
-        </select></div>`).join('')}
+        </select>
+        <span class="mini">${theirs ? 'line ' + (i+1) : 'paid by ' + esc(p.name)}</span>
+      </div>`;}).join('')}
       <div class="qbar">
         <button class="btn" data-act="reviewOk" data-id="${it.id}">That's right →</button>
         ${skip}
@@ -3494,6 +3520,27 @@ ACT.rvPaid = function(el){
     if (e){ e.paid = el.checked; e.paidAmount = el.checked ? (r.fee||11) : 0;
             e.paidRef = el.checked ? (e.paidRef || 'confirmed by you') : ''; } });
   save(); render();
+};
+ACT.rvLineName = function(el){
+  const r = round(), e = r.entries.find(z => z.id === el.dataset.eid);
+  if (!e) return;
+  const nm = String(el.value || '').trim();
+  if (!nm) return;
+  const payer = person(e.personId);
+  let owner = state.people.find(q => L.norm(q.name) === L.norm(nm));
+  if (!owner){ owner = { id:uid(), name:nm, aliases:[] }; state.people.push(owner); }
+  if (owner.id !== e.personId){
+    const was = e.personId;
+    e.personId = owner.id;
+    e.paidBy = (payer && payer.id !== owner.id) ? payer.name : '';
+    [was, owner.id].forEach(pid => {
+      const own = r.entries.filter(z => z.personId === pid);
+      own.forEach((z,i) => { z.line = i+1; z.of = own.length; });
+    });
+    save();
+  } else if (L.norm(owner.name) !== L.norm(nm)){
+    owner.name = nm; save();
+  }
 };
 ACT.rvPick = function(el){
   const r = round(), id = el.dataset.eid;
