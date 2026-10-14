@@ -1024,6 +1024,10 @@ function countLines(text, fee, mainName, organiser){
   const rawT = ' ' + tidy(text).replace(/£\s?\d+(\.\d+)?/g,' ') + ' ';
   const numRe = /(?:^|[\s\-=:.,)(\[\]])(\d{1,2})(?=$|[\s\-=:.,)(\[\]])/g;
   while ((m = numRe.exec(rawT)) !== null){ const v = +m[1]; if (v>=1 && v<=20) nums.add(v); }
+  // "Pick2", "Line3", "Entry2" — a digit glued to one of these words is a line number,
+  // unlike the digit in "m8" or "gr8"
+  const glued = /\b(?:pick|line|entry|no|number)\s*(\d{1,2})\b/gi;
+  while ((m = glued.exec(rawT)) !== null){ const v = +m[1]; if (v>=1 && v<=20) nums.add(v); }
   if (nums.size){
     const mx = Math.max(...nums);
     if (mx > 1){ n = Math.max(n, mx); evidence.push('numbered up to ' + mx); }
