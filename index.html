@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="LMS">
-<meta name="theme-color" content="#0d3b2e">
+<meta name="theme-color" content="#10349e">
 <title>Last Man Standing — Tracker</title>
 <style>
 /* ---- tokens ----
    Palette taken from a printed football wallchart: newsprint paper, ink,
    pitch green for the brand, and three status colours that never share a hue. */
 :root{
-  --paper:#f4f2ed; --card:#ffffff; --ink:#12171d; --ink-2:#4b5560; --ink-3:#7b8590;
-  --line:#ddd8d0; --line-2:#eceae5;
-  --pitch:#0d3b2e; --pitch-2:#155c45;
-  --through:#1c7a4f; --through-bg:#e4f2ea;
-  --out:#ad2417;     --out-bg:#fbe7e4;
-  --review:#9a5d00;  --review-bg:#fbf0dd;
-  --idle:#6b7480;    --idle-bg:#eeece7;
+  --paper:#f5f7fc; --card:#ffffff; --ink:#0f1421; --ink-2:#44506b; --ink-3:#73809c;
+  --line:#d8e0f2; --line-2:#eceff8;
+  --pitch:#10349e; --pitch-2:#1b4bd8;
+  --through:#10349e; --through-bg:#e7ecfb;
+  --out:#c8102e;     --out-bg:#fdeaee;
+  --review:#8c1b2f;  --review-bg:#fbeef0;
+  --idle:#73809c;    --idle-bg:#eef1f8;
   --r:6px; --s:4px;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -35,7 +35,7 @@ button,select,input,textarea{font-family:inherit;font-size:14px}
 /* ---- shell ---- */
 .top{background:var(--pitch);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .top h1{font-size:20px;color:#fff}
-.top .sub{color:#9dc4b4;font:12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.top .sub{color:#b9c8f2;font:12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase}
 .top .spacer{flex:1}
 .roundpick{display:flex;align-items:center;gap:8px}
 .roundpick select{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:var(--r);padding:8px 10px;min-height:40px}
@@ -87,7 +87,7 @@ table{width:100%;border-collapse:collapse}
 th{text-align:left;font:11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:8px;border-bottom:1px solid var(--line-2);vertical-align:middle}
 tr:last-child td{border-bottom:0}
-tbody tr:hover{background:#fafaf8}
+tbody tr:hover{background:#f8faff}
 .num{font-family:var(--mono);text-align:right;white-space:nowrap}
 .tw{overflow-x:auto}
 
@@ -95,7 +95,7 @@ tbody tr:hover{background:#fafaf8}
 .pill{display:inline-block;padding:2px 8px;border-radius:20px;font:11px/1.7 var(--mono);letter-spacing:.04em;text-transform:uppercase;font-weight:600;white-space:nowrap}
 .pill.through{background:var(--through-bg);color:var(--through)}
 .pill.out{background:var(--out-bg);color:var(--out)}
-.pill.review{background:var(--review-bg);color:var(--review)}
+.pill.review{background:var(--review-bg);color:var(--review);box-shadow:inset 0 0 0 1px #e8c3ca}
 .pill.idle{background:var(--idle-bg);color:var(--idle)}
 .flags{font-size:12px;color:var(--review);display:block;margin-top:3px;line-height:1.4}
 .quote{font:12px/1.45 var(--mono);color:var(--ink-3);display:block;margin-top:3px;max-width:340px;white-space:pre-wrap}
@@ -176,6 +176,12 @@ details summary{cursor:pointer;font-weight:600;padding:6px 0}
   textarea{min-height:110px}
   .field{min-width:0;max-width:none !important;width:100%}
   .row{gap:9px}
+  /* the date range: three datetime pickers side by side is unusable on a phone */
+  .row.dates{display:block}
+  .row.dates .field{margin-bottom:12px}
+  .row.dates > div:last-child{width:100%}
+  .row.dates .btn{width:100%}
+  input[type="datetime-local"]{width:100%;min-height:48px;padding:10px 12px}
 
   /* tables become stacked cards — five columns don't fit a phone */
   table.stack thead{display:none}
@@ -199,6 +205,7 @@ nav .moretoggle{color:var(--ink-3);font-weight:600}
 nav .more-tabs{display:contents}
 nav .more-tabs[hidden]{display:none}
 .two-up{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:900px){ .row.dates .field{max-width:none !important;flex:1 1 220px} }
 @media (max-width:720px){.two-up{grid-template-columns:1fr}}
 .bigbtn{font-size:16px;padding:14px 22px;min-height:52px}
 .qcard{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:20px;max-width:760px;margin:0 auto}
@@ -233,7 +240,7 @@ details.paste[open] summary{margin-bottom:8px}
   </div>
   <div class="spacer"></div>
   <div class="roundpick">
-    <label class="f" for="roundSel" style="color:#9dc4b4;margin:0">Round</label>
+    <label class="f" for="roundSel" style="color:#b9c8f2;margin:0">Round</label>
     <select id="roundSel"></select>
     <button class="btn ghost sm" data-act="exportJson" title="Download a backup">Backup</button>
   </div>
@@ -2928,7 +2935,7 @@ function renderHome(r){
       <div class="field" style="max-width:230px"><label class="f" for="suOrg">Organiser</label>
         <input type="text" id="suOrg" value="${esc(ui.organiser!==undefined?ui.organiser:'Greg Chamberlain')}"></div>
     </div>
-    <div class="row" style="margin-top:12px;align-items:flex-end">
+    <div class="row dates" style="margin-top:12px;align-items:flex-end">
       <div class="field" style="max-width:240px"><label class="f" for="suFrom">Read the chat from</label>
         <input type="datetime-local" id="suFrom" value="${esc(ui.fromWhen||'')}"></div>
       <div class="field" style="max-width:240px"><label class="f" for="suTo">up to and including</label>
@@ -3254,7 +3261,9 @@ ACT.buildAll = function(){
         if (owner.id !== p.id){ e.personId = owner.id; e.paidBy = p.name; renumber(owner.id); }
       }
       ids.push(e.id);
-      const team = mem ? mem.team : x.picks[n];
+      // a member with no team of their own still takes the team found elsewhere
+      // in the message ("Alan ward / Arsenal / Paid")
+      const team = (mem && mem.team) ? mem.team : x.picks[n];
       if (team) (r.picks[e.id] = r.picks[e.id] || {})[1] = team;
     }
     renumber(p.id);
@@ -3279,6 +3288,18 @@ ACT.buildAll = function(){
     }
   });
 
+  /* ---------- 3a. said paid, but the statement doesn't show it ---------- */
+  (function(){
+    if (!ui.monzoText.trim()) return;
+    const byPerson = {};
+    r.entries.forEach(e => { (byPerson[e.personId] = byPerson[e.personId] || []).push(e); });
+    Object.keys(byPerson).forEach(pid => {
+      const set = byPerson[pid];
+      if (set.some(e => e.saidPaid) && !set.some(e => e.bankPaid))
+        review.push({ id:uid(), kind:'unsure', personId:pid, entryIds:set.map(e=>e.id), done:false });
+    });
+  })();
+
   /* ---------- 3. paid, but never said a word ----------
      These aren't decisions, they're a chase list, so they live as a filter on the
      list rather than as a card each. Same for lines with no team. */
@@ -3286,7 +3307,7 @@ ACT.buildAll = function(){
 
   // lines with no team are a chase list, not a queue of judgements
 
-  const order = { entrant:0, payment:1, frombank:2, unpaidclaim:3, pick:4 };
+  const order = { entrant:0, payment:1, unsure:2, frombank:3, pick:4 };
   review.forEach(x => { if (x.second) x.done = true; });     // parked, not gone
   r.review = review.sort((a,b)=>(order[a.kind]-order[b.kind]) ||
     ({low:0,medium:1,high:2}[a.confidence||'high'] - {low:0,medium:1,high:2}[b.confidence||'high']));
@@ -3403,16 +3424,17 @@ function reviewCard(r, it){
         <button class="btn ghost" data-act="reviewOk" data-id="${it.id}">Not for this game</button>
       </div></div>`;
   }
-  if (it.kind === 'unpaidclaim'){
+  if (it.kind === 'unsure' || it.kind === 'unpaidclaim'){
     const p = person(it.personId) || {name:'?'};
     return `<div class="qcard">
-      <span class="pill review">Said paid, no bank record</span>
+      <span class="pill review">Unsure — did they pay?</span>
       <h2 style="margin-top:10px">${esc(p.name)}</h2>
-      <p class="hint" style="margin:0">They said they'd paid in the group, but nothing in the statement matches them.</p>
+      <p class="hint" style="margin:0">They said they'd paid in the group, but nothing in the statement matches that name.
+      It may be a payment under a different name, or it may not have arrived.</p>
       ${p.quote?`<div class="said">${esc(p.quote)}</div>`:''}
       <div class="qbar">
-        <button class="btn" data-act="rvTrust" data-id="${it.id}">Take their word — paid →</button>
-        <button class="btn ghost" data-act="rvUnpaid" data-id="${it.id}">Mark unpaid, chase them</button>
+        <button class="btn" data-act="rvTrust" data-id="${it.id}">Mark as paid →</button>
+        <button class="btn ghost" data-act="rvUnpaid" data-id="${it.id}">Not paid — chase them</button>
         ${skip}
       </div></div>`;
   }
@@ -3501,7 +3523,7 @@ ACT.rvApplyPay = function(el){
 ACT.rvTrust = function(el){
   const r = round(), it = revItem(el.dataset.id); if (!it) return;
   it.entryIds.forEach(id => { const e = r.entries.find(z=>z.id===id);
-    if (e){ e.paid = true; e.paidRef = 'said paid in the group'; } });
+    if (e){ e.paid = true; e.bankPaid = true; e.paidRef = 'confirmed by you'; } });
   it.done = true; save(); render();
 };
 ACT.rvUnpaid = function(el){
@@ -3514,10 +3536,15 @@ ACT.rvUnpaid = function(el){
 /* ---------- the list ---------- */
 /* One row per person: have they paid, and what did they pick. Payment state has
    three values, not two — the bank confirms it, or they only said so in the group. */
+/* Two states, because that's the only question Greg is asking: is the money there.
+   A claim in the group chat isn't payment — it's a reason to look harder at a
+   name the statement didn't match. */
 function payState(lines){
-  if (lines.some(e => e.bankPaid)) return { k:'bank',  pill:'through', label:'paid',      note:'matched in the statement' };
-  if (lines.some(e => e.paid))     return { k:'claim', pill:'review',  label:'says paid', note:'their word, not the bank' };
-  return { k:'none', pill:'out', label:'not paid', note:'' };
+  if (lines.some(e => e.bankPaid)) return { k:'paid', pill:'through', label:'paid', note:'' };
+  const claimed = lines.some(e => e.saidPaid || e.paid);
+  if (claimed) return { k:'unsure', pill:'review', label:'unsure',
+                        note:'says paid in the group, nothing matching in the statement', claimed:true };
+  return { k:'none', pill:'out', label:'not paid', note:'', claimed:false };
 }
 function listPeople(r){
   const by = new Map();
@@ -3530,7 +3557,8 @@ function listPeople(r){
   return [...by.entries()].map(([pid, lines]) => {
     lines.sort((a,b)=>(a.line||1)-(b.line||1));
     const p = person(pid) || { name:'(unknown)' };
-    return { pid, name:p.name, lines, pay:payState(lines), silent:(r.silent||[]).includes(pid),
+    const pay = payState(lines);
+    return { pid, name:p.name, lines, pay, claimed:!!pay.claimed, silent:(r.silent||[]).includes(pid),
              picks: lines.map(e => (r.picks[e.id]||{})[1] || null),
              needsCheck: flagged.has(pid),
              ref: (lines.find(e=>e.paidRef)||{}).paidRef || '' };
@@ -3544,14 +3572,15 @@ function renderList(r){
   const view = ui.listView || 'all';
   const rows = all.filter(x =>
     (!f || x.name.toLowerCase().includes(f)) &&
-    (view !== 'unpaid'  || x.pay.k !== 'bank') &&
+    (view !== 'unpaid'  || x.pay.k !== 'paid') &&
+    (view !== 'unsure'  || x.pay.k === 'unsure') &&
     (view !== 'nopick'  || x.picks.some(p => !p)) &&
     (view !== 'check'   || x.needsCheck) &&
     (view !== 'silent'  || x.silent));
 
-  const banked  = all.filter(x=>x.pay.k==='bank').reduce((n,x)=>n+x.lines.length,0);
-  const claimed = all.filter(x=>x.pay.k==='claim').reduce((n,x)=>n+x.lines.length,0);
+  const banked  = all.filter(x=>x.pay.k==='paid').reduce((n,x)=>n+x.lines.length,0);
   const owing   = all.filter(x=>x.pay.k==='none').reduce((n,x)=>n+x.lines.length,0);
+  const claimed = all.filter(x=>x.pay.k==='unsure').length;
   const noPick  = all.filter(x=>x.picks.some(p=>!p)).length;
   const tab = (k,label,n) => `<button class="btn ${view===k?'':'ghost'} sm" data-act="listView" data-v="${k}">${label}${n!==undefined?' ('+n+')':''}</button>`;
 
@@ -3577,16 +3606,17 @@ function renderList(r){
 
   ${all.length ? `
   <div class="stats" style="margin-bottom:14px">
-    <div class="stat"><div class="k">In the bank</div><div class="v">${money(banked*fee)}<small> ${banked} lines</small></div></div>
-    <div class="stat"><div class="k">Said paid only</div><div class="v">${money(claimed*fee)}<small> ${claimed} lines</small></div></div>
-    <div class="stat"><div class="k">Nothing yet</div><div class="v">${money(owing*fee)}<small> ${owing} lines</small></div></div>
+    <div class="stat"><div class="k">Paid</div><div class="v">${money(banked*fee)}<small> ${banked} lines</small></div></div>
+    <div class="stat"><div class="k">Not paid</div><div class="v">${money(owing*fee)}<small> ${owing} lines</small></div></div>
+    <div class="stat"><div class="k">Unsure</div><div class="v">${claimed}<small> people to check</small></div></div>
     <div class="stat"><div class="k">No team in</div><div class="v">${noPick}<small> people</small></div></div>
   </div>
 
   <div class="row" style="margin-bottom:12px">
     <div class="field" style="max-width:240px"><input type="text" placeholder="Find a name…" value="${esc(ui.listFilter||'')}" data-act="listFilter"></div>
     ${tab('all','Everyone',all.length)}
-    ${tab('unpaid','Not in the bank',all.filter(x=>x.pay.k!=='bank').length)}
+    ${tab('unpaid','Not paid',all.filter(x=>x.pay.k==='none').length)}
+    ${tab('unsure','Unsure',all.filter(x=>x.pay.k==='unsure').length)}
     ${tab('nopick','No team',noPick)}
     ${tab('check','Needs checking',all.filter(x=>x.needsCheck).length)}
     ${tab('silent','Paid, never posted',all.filter(x=>x.silent).length)}
